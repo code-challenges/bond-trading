@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/gofiber/fiber/v2/middleware/idempotency"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/monitor"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
@@ -22,6 +24,7 @@ import (
 	. "github.com/asalvi0/bond-trading/internal/model"
 	"github.com/asalvi0/bond-trading/internal/order"
 	"github.com/asalvi0/bond-trading/internal/user"
+	"github.com/asalvi0/bond-trading/internal/utils/storage/sqlite3"
 )
 
 func main() {
@@ -41,7 +44,7 @@ func main() {
 }
 
 func setupMiddleware(app *fiber.App) {
-	// storage := sqlite3.New()
+	storage := sqlite3.New()
 
 	app.Use(favicon.New())
 	app.Use(recover.New())
@@ -60,11 +63,11 @@ func setupMiddleware(app *fiber.App) {
 		Level: compress.LevelBestSpeed,
 	}))
 
-	// app.Use(limiter.New(limiter.Config{
-	// 	Storage:    storage,
-	// 	Max:        30,
-	// 	Expiration: 30 * time.Second,
-	// }))
+	app.Use(limiter.New(limiter.Config{
+		Storage:    storage,
+		Max:        1000,
+		Expiration: 1 * time.Minute,
+	}))
 
 	app.Use(helmet.New())
 	app.Use(csrf.New())
