@@ -7,7 +7,7 @@ import (
 )
 
 func RegisterRoutes(app *fiber.App) {
-	v1 := app.Group("/api/v1/order", middleware.Protected())
+	v1 := app.Group("/api/v1", middleware.Protected())
 
 	v1.Get("/orders", getAllOrders)
 	v1.Get("/order/:id", getOrder)
