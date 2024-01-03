@@ -1,0 +1,37 @@
+include:
+  - path:
+    - memphis.compose.yml
+
+services:
+  api_service:
+    image: bond-trading/api_service:latest
+    container_name: api_service
+    depends_on:
+      - memphis
+    build:
+      context: .
+      dockerfile: ./api_service.dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - memphis
+      - backend
+
+  order_service:
+    image: bond-trading/order_service:latest
+    container_name: order_service
+    depends_on:
+      - memphis
+    build:
+      context: .
+      dockerfile: ./order_service.dockerfile
+    ports:
+      - "8081:8081"
+    networks:
+      - memphis
+      - backend
+
+networks:
+  backend:
+    ipam:
+      driver: default

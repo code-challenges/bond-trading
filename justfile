@@ -22,3 +22,6 @@ build-docker:
 
 clean-docker-cache:
     docker builder prune -af
+
+compose-up:
+	docker compose -f ./compose.yml -p bond-trading up -d
