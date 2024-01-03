@@ -20,11 +20,11 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 
-	"github.com/asalvi0/bond-trading/internal/authn"
-	. "github.com/asalvi0/bond-trading/internal/model"
-	"github.com/asalvi0/bond-trading/internal/order"
-	"github.com/asalvi0/bond-trading/internal/user"
-	"github.com/asalvi0/bond-trading/internal/utils/storage/sqlite3"
+	"github.com/asalvi0/bond-trading/internal/api/authn"
+	"github.com/asalvi0/bond-trading/internal/api/order"
+	"github.com/asalvi0/bond-trading/internal/api/storage/sqlite3"
+	"github.com/asalvi0/bond-trading/internal/api/user"
+	. "github.com/asalvi0/bond-trading/internal/models"
 )
 
 func main() {
@@ -74,7 +74,7 @@ func setupMiddleware(app *fiber.App) {
 }
 
 func orderDemo() {
-	order := NewOrder(1, 12, 123, 100, 99.50, Buy, Open)
+	order := NewOrder(1, 12, 123, 100, 90.55, Buy, Open)
 	if err := order.Validate(); err != nil {
 		fmt.Println("Validation error:", err)
 		return
