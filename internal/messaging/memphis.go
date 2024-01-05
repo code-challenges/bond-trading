@@ -14,18 +14,12 @@ import (
 	. "github.com/asalvi0/bond-trading/internal/models"
 )
 
-type (
-	Config struct {
-		conn      *memphis.Conn
-		producers map[string]*memphis.Producer
-		consumers map[string]*memphis.Consumer
-		stations  map[string]*memphis.Station
-	}
-
-	MemphisClient struct {
-		Config
-	}
-)
+type MemphisClient struct {
+	conn      *memphis.Conn
+	producers map[string]*memphis.Producer
+	consumers map[string]*memphis.Consumer
+	stations  map[string]*memphis.Station
+}
 
 func NewMemphisClient() (*MemphisClient, error) {
 	result := MemphisClient{}
