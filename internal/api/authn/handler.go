@@ -1,12 +1,12 @@
 package authn
 
 import (
-	"github.com/asalvi0/bond-trading/internal/middleware"
+	"github.com/asalvi0/bond-trading/internal/api/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterRoutes(app *fiber.App) {
+func RegisterRoutes(app *fiber.App) error {
 	v1 := app.Group("/v1")
 
 	// GET
@@ -21,6 +21,8 @@ func RegisterRoutes(app *fiber.App) {
 	v1.Post("/reset-password", ResetPassword)
 	v1.Post("/user/change-password", PasswordChange, middleware.Protected())
 	v1.Post("/email/resend", EmailResend)
+
+	return nil
 }
 
 // Logout - Cierre de sesión
