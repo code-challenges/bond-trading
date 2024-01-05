@@ -45,9 +45,7 @@ services:
       INITIAL_CONFIG_FILE: |
           users:
             client:
-            - user: api_service
-              password: Test123456!@
-            - user: order_service
+            - user: service_user
               password: Test123456!@
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

@@ -24,4 +24,7 @@ clean-docker-cache:
     docker builder prune -af
 
 compose-up:
-	docker compose -f ./compose.yml -p bond-trading up -d
+	docker compose -f ./docker/compose.yml -p bond-trading up -d
+
+memphis-up:
+	docker compose -f ./docker/memphis.compose.yml -p memphis up -d
