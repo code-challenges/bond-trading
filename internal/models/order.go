@@ -20,6 +20,7 @@ func (a Action) IsValid() bool {
 type Status string
 
 const (
+	Pending  Status = "PENDING"
 	Open     Status = "OPEN"
 	Filled   Status = "FILLED"
 	Canceled Status = "CANCELED"
@@ -37,7 +38,7 @@ type Order struct {
 	Quantity  uint      `json:"quantity" validate:"required,min=1,max=10000"`
 	Price     float64   `json:"price" validate:"required,min=0,max=100000000"`
 	Action    Action    `json:"action" validate:"required,oneof=BUY SELL CANCEL"`
-	Status    Status    `json:"status" validate:"required,oneof=OPEN FILLED CANCELED"`
+	Status    Status    `json:"status" validate:"required,oneof=PENDING OPEN FILLED CANCELED"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	ExpiresAt time.Time `json:"expiresAt"`
