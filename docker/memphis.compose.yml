@@ -2,15 +2,17 @@ services:
   memphis-metadata:
     image: memphisos/memphis-metadata:docker-15.2.0-debian-11-r27
     container_name: memphis-metadata
+    hostname: memphis-metadata
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U memphis -p 5005"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: on-failure
     networks:
       - memphis
     ports:
-      - '5005:5005'
+      - 5005:5005
     environment:
       POSTGRESQL_USERNAME: memphis
       POSTGRESQL_PASSWORD: memphis
@@ -20,6 +22,7 @@ services:
   memphis:
     image: memphisos/memphis:latest
     container_name: memphis
+    hostname: memphis
     depends_on:
       memphis-metadata:
         condition: service_healthy
@@ -33,9 +36,9 @@ services:
     networks:
       - memphis
     ports:
-      - "9000:9000"
-      - "6666:6666"
-      - "7770:7770"
+      - 9000:9000
+      - 6666:6666
+      - 7770:7770
     environment:
       ROOT_PASSWORD: memphis
       DOCKER_ENV: true
@@ -53,6 +56,7 @@ services:
   memphis-rest-gateway:
       image: memphisos/memphis-rest-gateway:latest
       container_name: memphis-rest-gateway
+      hostname: memphis-rest-gateway
       depends_on:
         memphis:
           condition: service_healthy
@@ -61,7 +65,7 @@ services:
       networks:
         - memphis
       ports:
-        - "4444:4444"
+        - 4444:4444
       environment:
         JWT_SECRET: JWT_TEST_PURPOSE
         REFRESH_JWT_SECRET: REFRESH_JWT_TEST_PURPOSE

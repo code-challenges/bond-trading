@@ -1,0 +1,18 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    hostname: timescaledb
+    restart: on-failure
+    pull_policy: always
+    networks:
+      - timescaledb
+    ports:
+      - 5433:5433
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+networks:
+  timescaledb:
+    ipam:
+      driver: default

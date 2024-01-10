@@ -1,0 +1,39 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest-alpine
+    container_name: clickhouse
+    hostname: clickhouse
+    restart: on-failure
+    pull_policy: always
+    user: "101:101"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - clickhouse
+    ports:
+      - 8123:8123
+      - 9001:9001
+    volumes:
+      - ${PWD}/docker/volumes/clickhouse/etc/clickhouse-server/config.d/config.xml:/etc/clickhouse-server/config.d/config.xml
+      - ${PWD}/docker/volumes/clickhouse/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+
+  clickhouse-keeper:
+      image: clickhouse/clickhouse-keeper:latest-alpine
+      user: "101:101"
+      container_name: clickhouse-keeper
+      hostname: clickhouse-keeper
+      restart: on-failure
+      pull_policy: always
+      networks:
+        - clickhouse
+      ports:
+        - 9181:9181
+      volumes:
+        - ${PWD}/docker/volumes/clickhouse-keeper/etc/clickhouse-keeper/keeper_config.xml:/etc/clickhouse-keeper/keeper_config.xml
+
+networks:
+  clickhouse:
+    ipam:
+      driver: default

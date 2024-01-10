@@ -24,7 +24,16 @@ clean-docker-cache:
     docker builder prune -af
 
 compose-up:
-	docker compose -f ./docker/compose.yml -p bond-trading up -d
+	docker compose -f ./docker/all.compose.yml -p bond-trading up -d
 
 memphis-up:
 	docker compose -f ./docker/memphis.compose.yml -p memphis up -d
+
+clickhouse-up:
+	docker compose -f ./docker/clickhouse.compose.yml -p clickhouse up -d
+
+tsdb-up:
+	docker compose -f ./docker/tsdb.compose.yml -p timescaledb up -d
+
+temporal-up:
+	docker compose -f ./docker/temporal.compose.yml -p temporal up -d
