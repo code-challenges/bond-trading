@@ -4,10 +4,12 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/asalvi0/bond-trading/internal/utils"
 )
 
 type User struct {
-	ID           uint      `json:"id"`
+	ID           string    `json:"id"`
 	Username     string    `json:"username" validate:"required,min=3,max=50"`
 	Email        string    `json:"email" validate:"required,email"`
 	PasswordHash string    `json:"password" validate:"required,min=8"`
@@ -15,18 +17,20 @@ type User struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
-func NewUser(id uint, username, email, password string) (*User, error) {
+func NewUser(username, email, password string) (*User, error) {
 	pwdHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
-	return &User{
-		ID:           id,
+	user := User{
 		Username:     username,
 		Email:        email,
 		PasswordHash: string(pwdHash),
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
-	}, nil
+	}
+	user.ID = utils.GenerateID(user)
+
+	return &user, nil
 }
