@@ -16,14 +16,13 @@ import (
 
 type MemphisClient struct {
 	conn      *memphis.Conn
+	stations  map[string]*memphis.Station
 	producers map[string]*memphis.Producer
 	consumers map[string]*memphis.Consumer
-	stations  map[string]*memphis.Station
 }
 
 func NewMemphisClient() (*MemphisClient, error) {
 	result := MemphisClient{}
-
 	result.producers = make(map[string]*memphis.Producer, 3)
 	result.consumers = make(map[string]*memphis.Consumer, 3)
 	result.stations = make(map[string]*memphis.Station, 3)
@@ -34,6 +33,10 @@ func NewMemphisClient() (*MemphisClient, error) {
 	}
 
 	return &result, nil
+}
+
+func (m *MemphisClient) Close() {
+	m.conn.Close()
 }
 
 // Initialize memphis connection, stations(topics), producers and consumers
@@ -84,6 +87,7 @@ func (m *MemphisClient) setupStations() error {
 // Create the buy, sell and cancel producers
 func (m *MemphisClient) setupProducers() error {
 	serviceName := config.Config("MEMPHIS_PRODUCER_SERVICE_NAME")
+
 	buyStationName := config.Config("MEMPHIS_BUY_STATION_NAME")
 	sellStationName := config.Config("MEMPHIS_SELL_STATION_NAME")
 	cancelStationName := config.Config("MEMPHIS_CANCEL_STATION_NAME")
@@ -147,9 +151,9 @@ func (m *MemphisClient) setupConsumers() error {
 // Create a memphis station(topic) and it's respective dead letter station for re-consumption
 func (m *MemphisClient) createStation(name string) error {
 	opts := []memphis.StationOpt{
-		memphis.StorageTypeOpt(memphis.Disk),
-		memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds),
-		memphis.RetentionVal(int((24 * time.Hour).Seconds())),
+		memphis.StorageTypeOpt(memphis.Memory),
+		memphis.RetentionTypeOpt(memphis.AckBased),
+		memphis.RetentionVal(int((10 * time.Hour).Seconds())),
 	}
 
 	dlStationName := name + "_dead_letter"
@@ -198,14 +202,14 @@ func (m *MemphisClient) createConsumer(ctx context.Context, stationName, service
 }
 
 // Send a message to the memphis station(topic) depending on the action provided
-func (m *MemphisClient) ProduceMessage(msgId string, order *Order) error {
+func (m *MemphisClient) ProduceMessage(order *Order) error {
 	var station string
 	switch order.Action {
-	case Buy:
+	case BUY:
 		station = config.Config("MEMPHIS_BUY_STATION_NAME")
-	case Sell:
+	case SELL:
 		station = config.Config("MEMPHIS_SELL_STATION_NAME")
-	case Cancel:
+	case CANCEL:
 		station = config.Config("MEMPHIS_CANCEL_STATION_NAME")
 	default:
 		return errors.New("Invalid action provided")
@@ -219,7 +223,7 @@ func (m *MemphisClient) ProduceMessage(msgId string, order *Order) error {
 	opts := []memphis.ProduceOpt{
 		memphis.AsyncProduce(),
 		memphis.AckWaitSec(15),
-		memphis.MsgId(msgId),
+		memphis.MsgId(order.ID),
 	}
 
 	jsonData, err := json.Marshal(order)
