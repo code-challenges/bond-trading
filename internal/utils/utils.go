@@ -16,7 +16,7 @@ func ValidateInput[T any](item T) error {
 	return nil
 }
 
-func GenerateMessageID[T any](data T) string {
+func GenerateID[T any](data T) string {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return ""
