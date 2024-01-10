@@ -15,16 +15,12 @@ type Handler struct {
 	controller *Controller
 }
 
-func newHandler(controller *Controller) *Handler {
-	return &Handler{controller}
-}
-
 func RegisterRoutes(app *fiber.App) error {
 	controller, err := newController()
 	if err != nil {
 		return err
 	}
-	h := newHandler(controller)
+	h := Handler{controller}
 
 	v1 := app.Group("/api/v1/orders", middleware.Protected())
 
@@ -109,14 +105,12 @@ func (h *Handler) getOrders(c *fiber.Ctx) error {
 }
 
 func (h *Handler) getOrder(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	if err != nil {
-		return err
-	} else if id <= 0 {
-		return errors.New("invalid ID provided")
+	id := c.Params("id", "")
+	if len(id) == 0 {
+		return errors.New("missing ID")
 	}
 
-	order, err := h.controller.getOrder(uint(id))
+	order, err := h.controller.getOrder(id)
 	if err != nil {
 		return err
 	}
