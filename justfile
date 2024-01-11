@@ -33,7 +33,4 @@ clickhouse-up:
 	docker compose -f ./docker/clickhouse.compose.yml -p clickhouse up -d
 
 tsdb-up:
-	docker compose -f ./docker/tsdb.compose.yml -p timescaledb up -d
-
-temporal-up:
-	docker compose -f ./docker/temporal.compose.yml -p temporal up -d
+	docker compose -f ./docker/timescaledb.compose.yml -p timescaledb up -d
