@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"time"
 
 	"github.com/asalvi0/bond-trading/internal/utils"
@@ -35,29 +36,36 @@ func (a Action) ToSide() int {
 type Status string
 
 const (
-	PENDING  Status = "PENDING"
-	OPEN     Status = "OPEN"
-	FILLED   Status = "FILLED"
-	CANCELED Status = "CANCELED"
+	PENDING   Status = "PENDING"
+	OPEN      Status = "OPEN"
+	FILLED    Status = "FILLED"
+	CANCELLED Status = "CANCELLED"
 )
 
 // IsValid checks if the Status value is valid
 func (s Status) IsValid() bool {
-	return s == OPEN || s == FILLED || s == CANCELED || s == PENDING
+	return s == OPEN || s == FILLED || s == CANCELLED || s == PENDING
 }
 
 type Order struct {
-	ID        string    `json:"id"`
-	UserID    uint      `json:"userId"`
-	BondID    uint      `json:"bondId" validate:"required"`
-	Quantity  uint      `json:"quantity" validate:"required,min=1,max=10000"`
-	Filled    uint      `json:"filled" validate:"min=0,max=10000"`
-	Price     float32   `json:"price" validate:"required,min=0,max=100000000"`
-	Action    Action    `json:"action" validate:"required,oneof=BUY SELL CANCEL"`
-	Status    Status    `json:"status" validate:"required,oneof=PENDING OPEN FILLED CANCELED"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-	ExpiresAt time.Time `json:"expiresAt"`
+	ID        string    `db:"id" json:"id"`
+	UserID    uint      `db:"user_id" json:"userId"`
+	BondID    uint      `db:"bond_id" json:"bondId" validate:"required"`
+	Quantity  uint      `db:"quantity" json:"quantity" validate:"required,min=1,max=10000"`
+	Filled    uint      `db:"filled" json:"filled" validate:"min=0,max=10000"`
+	Price     float32   `db:"price" json:"price" validate:"required,min=0,max=100000000"`
+	Action    Action    `db:"action" json:"action" validate:"required,oneof=BUY SELL CANCEL"`
+	Status    Status    `db:"status" json:"status" validate:"required,oneof=PENDING OPEN FILLED CANCELLED"`
+	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+}
+
+func (o *Order) Sign(ctx context.Context) {
+	o.UserID = ctx.Value("userId").(uint)
+	o.CreatedAt = time.Now().UTC()
+	o.ExpiresAt = o.CreatedAt.Add(10 * time.Hour)
+	o.ID = utils.GenerateID(o) // TODO:  check for duplicates and move it at the top to enable idempotency
 }
 
 func NewOrder(bondID, quantity uint, price float32, action Action) *Order {
@@ -67,9 +75,9 @@ func NewOrder(bondID, quantity uint, price float32, action Action) *Order {
 		Price:     price,
 		Action:    action,
 		Status:    PENDING,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(10 * time.Hour),
+		ExpiresAt: time.Now().UTC().Add(10 * time.Hour),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 	}
 	order.ID = utils.GenerateID(order)
 

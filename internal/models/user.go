@@ -27,8 +27,8 @@ func NewUser(username, email, password string) (*User, error) {
 		Username:     username,
 		Email:        email,
 		PasswordHash: string(pwdHash),
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		CreatedAt:    time.Now().UTC(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	user.ID = utils.GenerateID(user)
 
