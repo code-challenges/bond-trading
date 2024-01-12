@@ -19,23 +19,33 @@ func NewDatabase() (*Database, error) {
 
 	ctx := context.Background()
 
-	host := config.Config("DB_HOST")
-	port := config.Config("DB_PORT")
-	dbName := config.Config("DB_NAME")
-	usr := config.Config("DB_USERNAME")
-	pwd := config.Config("DB_PASSWORD")
-	if len(host) == 0 || len(port) == 0 || len(dbName) == 0 || len(usr) == 0 {
-		return nil, errors.New("Missing DB configuration")
+	dbURL, err := URL()
+	if err != nil {
+		return nil, err
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", usr, pwd, host, port, dbName)
 
-	pool, err := pgxpool.New(ctx, connStr)
+	pool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to connect to database: %w\n", err)
 	}
 	database.dbPool = pool
 
 	return &database, nil
+}
+
+func URL() (string, error) {
+	host := config.Config("DB_HOST")
+	port := config.Config("DB_PORT")
+	dbName := config.Config("DB_NAME")
+	usr := config.Config("DB_USERNAME")
+	pwd := config.Config("DB_PASSWORD")
+
+	if len(host) == 0 || len(port) == 0 || len(dbName) == 0 || len(usr) == 0 {
+		return "", errors.New("Missing or invalid DB configuration")
+	}
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", usr, pwd, host, port, dbName)
+
+	return connStr, nil
 }
 
 func (d *Database) Close() {

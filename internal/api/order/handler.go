@@ -1,6 +1,7 @@
 package order
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -25,10 +26,12 @@ func RegisterRoutes(app *fiber.App) error {
 	v1 := app.Group("/api/v1/orders", middleware.Protected())
 
 	v1.Post("/", h.createOrder)
-	v1.Put("/", h.updateOrder)
-	v1.Put("/:id", h.cancelOrder)
+	v1.Put("/:id", h.updateOrder)
+	v1.Patch("/:id", h.cancelOrder)
 	v1.Get("/", h.getOrders)
 	v1.Get("/:id", h.getOrder)
+
+	app.Get("/api/v1/my/orders", middleware.Protected(), h.getOrdersByUserID)
 
 	return nil
 }
@@ -44,7 +47,14 @@ func (h *Handler) createOrder(c *fiber.Ctx) error {
 		return err
 	}
 
-	order, err := h.controller.createOrder(item)
+	userId, err := utils.GetUserIdFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	order, err := h.controller.createOrder(ctx, item)
 	if err != nil {
 		return err
 	}
@@ -63,7 +73,14 @@ func (h *Handler) updateOrder(c *fiber.Ctx) error {
 		return err
 	}
 
-	order, err := h.controller.updateOrder(item)
+	userId, err := utils.GetUserIdFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	order, err := h.controller.updateOrder(ctx, item)
 	if err != nil {
 		return err
 	}
@@ -72,17 +89,19 @@ func (h *Handler) updateOrder(c *fiber.Ctx) error {
 }
 
 func (h *Handler) cancelOrder(c *fiber.Ctx) error {
-	order := new(models.Order)
-	if err := c.BodyParser(order); err != nil {
-		return err
+	id := c.Params("id", "")
+	if len(id) == 0 {
+		return errors.New("missing ID")
 	}
 
-	err := utils.ValidateInput(order)
+	userId, err := utils.GetUserIdFromToken(c)
 	if err != nil {
 		return err
 	}
 
-	err = h.controller.cancelOrder(order)
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	err = h.controller.cancelOrder(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -96,7 +115,14 @@ func (h *Handler) getOrders(c *fiber.Ctx) error {
 		return errors.New("invalid count provided")
 	}
 
-	orders, err := h.controller.getOrders(uint(count))
+	userId, err := utils.GetUserIdFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	orders, err := h.controller.getOrders(ctx, uint(count))
 	if err != nil {
 		return err
 	}
@@ -110,10 +136,38 @@ func (h *Handler) getOrder(c *fiber.Ctx) error {
 		return errors.New("missing ID")
 	}
 
-	order, err := h.controller.getOrder(id)
+	userId, err := utils.GetUserIdFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	order, err := h.controller.getOrder(ctx, id)
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(order)
+}
+
+func (h *Handler) getOrdersByUserID(c *fiber.Ctx) error {
+	count := c.QueryInt("count", 0)
+	if count <= 0 {
+		return errors.New("invalid count provided")
+	}
+
+	userId, err := utils.GetUserIdFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.WithValue(context.Background(), "userId", userId)
+
+	orders, err := h.controller.getOrdersByUserId(ctx, userId, uint(count))
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(orders)
 }

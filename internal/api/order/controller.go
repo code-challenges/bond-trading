@@ -1,6 +1,11 @@
 package order
 
 import (
+	"context"
+	"errors"
+	"strings"
+	"time"
+
 	. "github.com/asalvi0/bond-trading/internal/database"
 	"github.com/asalvi0/bond-trading/internal/messaging"
 	. "github.com/asalvi0/bond-trading/internal/models"
@@ -30,45 +35,71 @@ func newController() (*Controller, error) {
 	return &result, nil
 }
 
-func (c *Controller) createOrder(order *Order) (*Order, error) {
+func (c *Controller) createOrder(ctx context.Context, order *Order) (*Order, error) {
+	order.Sign(ctx)
+
 	err := c.memphisClient.ProduceMessage(order)
 	if err != nil {
 		return nil, err
 	}
 
-	// write to database
-	go func() { c.db.CreateOrder(order) }()
+	err = c.db.CreateOrder(ctx, order)
+	if err != nil {
+		if strings.Index(err.Error(), "SQLSTATE 23505") > -1 {
+			return nil, errors.New("order already exists")
+		}
+		return nil, err
+	}
 
 	return nil, nil
 }
 
-func (c *Controller) updateOrder(order *Order) (*Order, error) {
+func (c *Controller) updateOrder(ctx context.Context, order *Order) (*Order, error) {
+	order.UpdatedAt = time.Now().UTC()
+
 	err := c.memphisClient.ProduceMessage(order)
 	if err != nil {
 		return nil, err
 	}
 
-	// write to database
-	go func() { c.db.UpdateOrder(order) }()
+	err = c.db.UpdateOrder(ctx, order)
+	if err != nil {
+		return nil, err
+	}
 
 	return nil, nil
 }
 
-func (c *Controller) cancelOrder(order *Order) error {
-	err := c.memphisClient.ProduceMessage(order)
+func (c *Controller) cancelOrder(ctx context.Context, id string) error {
+	order, err := c.getOrder(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	// write to database
-	go func() { c.db.CancelOrder(order) }()
+	if order.Status == CANCELLED {
+		return errors.New("order already cancelled")
+	}
+	ogAction := order.Action
+	order.Action = CANCEL // changed ONLY for the message published
+	order.Status = CANCELLED
+	order.UpdatedAt = time.Now().UTC()
+
+	err = c.memphisClient.ProduceMessage(order)
+	if err != nil {
+		return err
+	}
+
+	order.Action = ogAction // restored to original value
+	err = c.db.UpdateOrder(ctx, order)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (c *Controller) getOrders(count uint) ([]*Order, error) {
-	// read from database
-	orders, err := c.db.GetOrders(count)
+func (c *Controller) getOrders(ctx context.Context, count uint) ([]*Order, error) {
+	orders, err := c.db.GetOrders(ctx, count)
 	if err != nil {
 		return nil, err
 	}
@@ -76,9 +107,9 @@ func (c *Controller) getOrders(count uint) ([]*Order, error) {
 	return orders, nil
 }
 
-func (c *Controller) getOrder(id string) (*Order, error) {
-	// read from database
-	order, err := c.db.GetOrderByID(id)
+func (c *Controller) getOrder(ctx context.Context, id string) (*Order, error) {
+	userId := ctx.Value("userId").(uint)
+	order, err := c.db.GetOrderByID(ctx, userId, id)
 	if err != nil {
 		return nil, err
 	}
@@ -86,9 +117,8 @@ func (c *Controller) getOrder(id string) (*Order, error) {
 	return order, nil
 }
 
-func (c *Controller) getOrdersByUserId(id uint, count uint) ([]*Order, error) {
-	// read from database
-	orders, err := c.db.GetOrdersByUserID(id, count)
+func (c *Controller) getOrdersByUserId(ctx context.Context, id uint, count uint) ([]*Order, error) {
+	orders, err := c.db.GetOrdersByUserID(ctx, id, count)
 	if err != nil {
 		return nil, err
 	}
