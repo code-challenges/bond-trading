@@ -59,10 +59,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = NewDatabase()
+	db, err := NewDatabase()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	orders := make([]*Order, 0)
 
