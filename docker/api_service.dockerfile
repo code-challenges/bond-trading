@@ -3,7 +3,7 @@ RUN apk --no-cache add git ca-certificates
 RUN mkdir /src
 ADD . /src/
 WORKDIR /src/cmd/api_service
-RUN CGO_ENABLED=0 GOOS=linux go build -o ../api_service -ldflags '-s -w -extldflags "-static"' ./
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-extldflags=-static -s -w"  .
 
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/

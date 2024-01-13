@@ -7,8 +7,8 @@ include:
 services:
   api_service:
     build:
-      context: .
-      dockerfile: ./api_service.dockerfile
+      context: ../
+      dockerfile: ./docker/api_service.dockerfile
     image: bond-trading/api_service:latest
     container_name: api_service
     hostname: api_service
@@ -24,8 +24,8 @@ services:
 
   order_service:
     build:
-      context: .
-      dockerfile: ./order_service.dockerfile
+      context: ../
+      dockerfile: ./docker/order_service.dockerfile
     image: bond-trading/order_service:latest
     container_name: order_service
     hostname: order_service
