@@ -16,8 +16,9 @@ clean-go-cache:
 	go clean -cache -modcache -i -r
 
 build-docker:
-	docker rmi -f bond-trading
-	docker build -t bond-trading:latest .
+	docker build -t api-service:latest -f ./docker/api_service.dockerfile ./docker/
+	docker build -t order-service:latest -f ./docker/order_service.dockerfile ./docker/
+	docker image prune
 	just clean-docker-cache
 
 clean-docker-cache:
