@@ -1,27 +1,9 @@
 include:
   - path:
     - memphis.compose.yml
-    # - clickhouse.compose.yml
     - timescaledb.compose.yml
 
 services:
-  api_service:
-    build:
-      context: ../
-      dockerfile: ./docker/api_service.dockerfile
-    image: bond-trading/api_service:latest
-    container_name: api_service
-    hostname: api_service
-    depends_on:
-      - memphis
-    ports:
-      - 8080:8080
-    networks:
-      # - clickhouse
-      - timescaledb
-      - memphis
-      - backend
-
   order_service:
     build:
       context: ../
@@ -30,13 +12,36 @@ services:
     container_name: order_service
     hostname: order_service
     depends_on:
-      - memphis
+      memphis:
+        condition: service_started
+      memphis-metadata:
+        condition: service_started
+      memphis-rest-gateway:
+        condition: service_started
+      timescaledb:
+        condition: service_started
     ports:
       - 8081:8081
     networks:
-      # - clickhouse
-      - timescaledb
       - memphis
+      - timescaledb
+      - backend
+
+  api_service:
+    build:
+      context: ../
+      dockerfile: ./docker/api_service.dockerfile
+    image: bond-trading/api_service:latest
+    container_name: api_service
+    hostname: api_service
+    depends_on:
+      order_service:
+        condition: service_started
+    ports:
+      - 8080:8080
+    networks:
+      - memphis
+      - timescaledb
       - backend
 
 networks:
