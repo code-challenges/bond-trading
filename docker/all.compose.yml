@@ -1,9 +1,8 @@
 include:
   - path:
     - memphis.compose.yml
-    - clickhouse.compose.yml
-    - tsdb.compose.yml
-    - temporal.compose.yml
+    # - clickhouse.compose.yml
+    - timescaledb.compose.yml
 
 services:
   api_service:
@@ -18,10 +17,9 @@ services:
     ports:
       - 8080:8080
     networks:
-      - clickhouse
+      # - clickhouse
       - timescaledb
       - memphis
-      - temporal
       - backend
 
   order_service:
@@ -36,10 +34,9 @@ services:
     ports:
       - 8081:8081
     networks:
-      - clickhouse
+      # - clickhouse
       - timescaledb
       - memphis
-      - temporal
       - backend
 
 networks:
