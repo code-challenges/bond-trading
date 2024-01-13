@@ -49,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	port := config.Config("APP_PORT")
+	port := config.Config("API_SERVICE_PORT")
 	log.Fatal(app.Listen(":" + port))
 }
 

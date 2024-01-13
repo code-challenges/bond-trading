@@ -10,8 +10,8 @@
             "request": "launch",
             "mode": "auto",
             "program": "./cmd/api_service/main.go",
-            "output": "./cmd/api_service/debug",
-            "cwd": "./cmd/api_service/"
+            "output": "./cmd/api_service_debug",
+            "cwd": "./cmd/"
         },
         {
             "name": "Order Service",
@@ -19,8 +19,8 @@
             "request": "launch",
             "mode": "auto",
             "program": "./cmd/order_service/main.go",
-            "output": "./cmd/order_service/debug",
-            "cwd": "./cmd/order_service/"
+            "output": "./cmd/order_service_debug",
+            "cwd": "./cmd/"
         }
     ]
 }
