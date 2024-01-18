@@ -10,13 +10,12 @@ alter type orderstatus owner to postgres;
 
 create table if not exists users
 (
-    id            bigint            not null constraint users_pk primary key,
-    username      varchar           not null,
+    id            serial            not null constraint users_pk primary key,
     email         varchar           not null,
     password_hash varchar           not null,
+    active        boolean           not null,
     created_at    timestamptz       not null,
-    updated_at    timestamptz,
-    active        boolean           not null
+    updated_at    timestamptz
 );
 alter table users owner to postgres;
 
@@ -36,6 +35,6 @@ create table if not exists orders
 );
 alter table orders owner to postgres;
 
--- create dev user/123
-insert into users (id, username, email, password_hash, created_at, active)
-    values (1, 'dev', 'dev@localhost', '$2a$10$bmPeLZ/DPG.7f7PbcoC.g.F0jZ4KPl64Tr4p8kxNJ/jRz0LFwPe9K', now(), true);
+-- create dev user with password: 123
+-- insert into users (id, email, password_hash, created_at, active)
+-- values (1, 'dev@localhost', '$2a$10$bmPeLZ/DPG.7f7PbcoC.g.F0jZ4KPl64Tr4p8kxNJ/jRz0LFwPe9K', now(), true);

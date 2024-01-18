@@ -19,9 +19,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 
-	"github.com/asalvi0/bond-trading/internal/api/authn"
+	"github.com/asalvi0/bond-trading/internal/api/auth"
 	"github.com/asalvi0/bond-trading/internal/api/order"
-	"github.com/asalvi0/bond-trading/internal/api/user"
 	"github.com/asalvi0/bond-trading/internal/config"
 )
 
@@ -34,12 +33,7 @@ func main() {
 
 	setupMiddleware(app)
 
-	err := authn.RegisterRoutes(app)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = user.RegisterRoutes(app)
+	err := auth.RegisterRoutes(app)
 	if err != nil {
 		log.Fatal(err)
 	}
