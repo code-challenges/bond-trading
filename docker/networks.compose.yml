@@ -1,0 +1,4 @@
+networks:
+  bond-trading:
+    ipam:
+      driver: default

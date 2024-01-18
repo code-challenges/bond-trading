@@ -4,13 +4,13 @@ include:
     - timescaledb.compose.yml
 
 services:
-  order_service:
+  order-service:
     build:
       context: ../
       dockerfile: ./docker/order_service.dockerfile
-    image: bond-trading/order_service:latest
-    container_name: order_service
-    hostname: order_service
+    image: bond-trading/order-service:latest
+    container_name: order-service
+    hostname: order-service
     depends_on:
       memphis:
         condition: service_started
@@ -20,31 +20,22 @@ services:
         condition: service_started
       timescaledb:
         condition: service_started
+    networks:
+      - bond-trading
     ports:
       - 8081:8081
-    networks:
-      - memphis
-      - timescaledb
-      - backend
 
-  api_service:
+  api-service:
     build:
       context: ../
       dockerfile: ./docker/api_service.dockerfile
-    image: bond-trading/api_service:latest
-    container_name: api_service
-    hostname: api_service
+    image: bond-trading/api-service:latest
+    container_name: api-service
+    hostname: api-service
     depends_on:
-      order_service:
+      order-service:
         condition: service_started
+    networks:
+      - bond-trading
     ports:
       - 8080:8080
-    networks:
-      - memphis
-      - timescaledb
-      - backend
-
-networks:
-  backend:
-    ipam:
-      driver: default

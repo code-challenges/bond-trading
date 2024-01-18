@@ -1,3 +1,7 @@
+include:
+  - path:
+    - networks.compose.yml
+
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg16
@@ -6,13 +10,8 @@ services:
     restart: on-failure
     pull_policy: always
     networks:
-      - timescaledb
+      - bond-trading
     ports:
       - 5432:5432
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # disable password authentication
-
-networks:
-  timescaledb:
-    ipam:
-      driver: default
