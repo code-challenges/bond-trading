@@ -31,6 +31,11 @@ func GenerateID[T any](data T) string {
 	return id
 }
 
+func HashString(data string) string {
+	hash := xxh3.Hash([]byte(data))
+	return fmt.Sprintf("%x", hash)
+}
+
 func GetUserIdFromToken(c *fiber.Ctx) (uint, error) {
 	token, ok := c.Locals("user").(*jwt.Token)
 	if !ok {
