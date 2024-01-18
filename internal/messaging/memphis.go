@@ -151,8 +151,8 @@ func (m *MemphisClient) setupConsumers() error {
 // Create a memphis station(topic) and it's respective dead letter station for re-consumption
 func (m *MemphisClient) createStation(name string) error {
 	opts := []memphis.StationOpt{
-		memphis.StorageTypeOpt(memphis.Memory),
-		memphis.RetentionTypeOpt(memphis.AckBased),
+		memphis.StorageTypeOpt(memphis.Disk),
+		memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds),
 		memphis.RetentionVal(int((10 * time.Hour).Seconds())),
 	}
 
