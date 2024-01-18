@@ -9,6 +9,7 @@ import (
 	. "github.com/asalvi0/bond-trading/internal/database"
 	"github.com/asalvi0/bond-trading/internal/messaging"
 	. "github.com/asalvi0/bond-trading/internal/models"
+	"github.com/asalvi0/bond-trading/internal/utils"
 )
 
 type Controller struct {
@@ -36,7 +37,10 @@ func newController() (*Controller, error) {
 }
 
 func (c *Controller) createOrder(ctx context.Context, order *Order) (*Order, error) {
-	order.Sign(ctx)
+	order.UserID = ctx.Value("userId").(uint)
+	order.CreatedAt = time.Now().UTC()
+	order.ExpiresAt = order.CreatedAt.Add(10 * time.Hour).UTC()
+	order.ID = utils.GenerateID(order) // TODO: to prevent duplicates move it at the top
 
 	err := c.memphisClient.ProduceMessage(order)
 	if err != nil {
@@ -51,11 +55,13 @@ func (c *Controller) createOrder(ctx context.Context, order *Order) (*Order, err
 		return nil, err
 	}
 
-	return nil, nil
+	return order, nil
 }
 
 func (c *Controller) updateOrder(ctx context.Context, order *Order) (*Order, error) {
-	order.UpdatedAt = time.Now().UTC()
+	order.UserID = ctx.Value("userId").(uint)
+	updatedAt := time.Now().UTC()
+	order.UpdatedAt = &updatedAt
 
 	err := c.memphisClient.ProduceMessage(order)
 	if err != nil {
@@ -67,7 +73,7 @@ func (c *Controller) updateOrder(ctx context.Context, order *Order) (*Order, err
 		return nil, err
 	}
 
-	return nil, nil
+	return order, nil
 }
 
 func (c *Controller) cancelOrder(ctx context.Context, id string) error {
@@ -81,8 +87,6 @@ func (c *Controller) cancelOrder(ctx context.Context, id string) error {
 	}
 	ogAction := order.Action
 	order.Action = CANCEL // changed ONLY for the message published
-	order.Status = CANCELLED
-	order.UpdatedAt = time.Now().UTC()
 
 	err = c.memphisClient.ProduceMessage(order)
 	if err != nil {
@@ -90,7 +94,11 @@ func (c *Controller) cancelOrder(ctx context.Context, id string) error {
 	}
 
 	order.Action = ogAction // restored to original value
-	err = c.db.UpdateOrder(ctx, order)
+	order.Status = CANCELLED
+	updatedAt := time.Now().UTC()
+	order.UpdatedAt = &updatedAt
+
+	err = c.db.UpdateOrderStatus(ctx, order)
 	if err != nil {
 		return err
 	}

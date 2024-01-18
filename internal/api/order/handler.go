@@ -37,12 +37,12 @@ func RegisterRoutes(app *fiber.App) error {
 }
 
 func (h *Handler) createOrder(c *fiber.Ctx) error {
-	item := new(models.Order)
-	if err := c.BodyParser(item); err != nil {
+	input := new(models.Order)
+	if err := c.BodyParser(input); err != nil {
 		return err
 	}
 
-	err := utils.ValidateInput(item)
+	err := utils.ValidateInput(input)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (h *Handler) createOrder(c *fiber.Ctx) error {
 
 	ctx := context.WithValue(context.Background(), "userId", userId)
 
-	order, err := h.controller.createOrder(ctx, item)
+	order, err := h.controller.createOrder(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -63,12 +63,17 @@ func (h *Handler) createOrder(c *fiber.Ctx) error {
 }
 
 func (h *Handler) updateOrder(c *fiber.Ctx) error {
-	item := new(models.Order)
-	if err := c.BodyParser(item); err != nil {
+	orderId := c.Params("id", "")
+	if len(orderId) == 0 {
+		return errors.New("missing ID")
+	}
+
+	input := new(models.Order)
+	if err := c.BodyParser(input); err != nil {
 		return err
 	}
 
-	err := utils.ValidateInput(item)
+	err := utils.ValidateInput(input)
 	if err != nil {
 		return err
 	}
@@ -80,7 +85,8 @@ func (h *Handler) updateOrder(c *fiber.Ctx) error {
 
 	ctx := context.WithValue(context.Background(), "userId", userId)
 
-	order, err := h.controller.updateOrder(ctx, item)
+	input.ID = orderId
+	order, err := h.controller.updateOrder(ctx, input)
 	if err != nil {
 		return err
 	}
