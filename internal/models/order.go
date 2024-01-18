@@ -1,10 +1,10 @@
 package models
 
 import (
-	"context"
 	"time"
 
 	"github.com/asalvi0/bond-trading/internal/utils"
+	"github.com/goccy/go-json"
 )
 
 // Action represents the action of a bond order (Buy, Sell or Cancel)
@@ -48,24 +48,33 @@ func (s Status) IsValid() bool {
 }
 
 type Order struct {
-	ID        string    `db:"id" json:"id"`
-	UserID    uint      `db:"user_id" json:"userId"`
-	BondID    uint      `db:"bond_id" json:"bondId" validate:"required"`
-	Quantity  uint      `db:"quantity" json:"quantity" validate:"required,min=1,max=10000"`
-	Filled    uint      `db:"filled" json:"filled" validate:"min=0,max=10000"`
-	Price     float32   `db:"price" json:"price" validate:"required,min=0,max=100000000"`
-	Action    Action    `db:"action" json:"action" validate:"required,oneof=BUY SELL CANCEL"`
-	Status    Status    `db:"status" json:"status" validate:"required,oneof=PENDING OPEN FILLED CANCELLED"`
-	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time `db:"updated_at" json:"updatedAt"`
+	ID        string     `db:"id" json:"id"`
+	UserID    uint       `db:"user_id" json:"userId"`
+	BondID    uint       `db:"bond_id" json:"bondId" validate:"required"`
+	Quantity  uint       `db:"quantity" json:"quantity" validate:"required,min=1,max=10000"`
+	Filled    uint       `db:"filled" json:"filled" validate:"min=0,max=10000"`
+	Price     float32    `db:"price" json:"price" validate:"required,min=0,max=100000000"`
+	Action    Action     `db:"action" json:"action" validate:"required,oneof=BUY SELL CANCEL"`
+	Status    Status     `db:"status" json:"status" validate:"omitempty,oneof=PENDING OPEN FILLED CANCELLED"`
+	ExpiresAt time.Time  `db:"expires_at" json:"expiresAt"`
+	CreatedAt time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt *time.Time `db:"updated_at" json:"updatedAt"`
 }
 
-func (o *Order) Sign(ctx context.Context) {
-	o.UserID = ctx.Value("userId").(uint)
+func (o *Order) UnmarshalJSON(data []byte) error {
+	type Alias Order
+	aux := (*Alias)(o)
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	o.Status = PENDING
 	o.CreatedAt = time.Now().UTC()
 	o.ExpiresAt = o.CreatedAt.Add(10 * time.Hour)
-	o.ID = utils.GenerateID(o) // TODO:  check for duplicates and move it at the top to enable idempotency
+	o.ID = utils.GenerateID(o)
+
+	return nil
 }
 
 func NewOrder(bondID, quantity uint, price float32, action Action) *Order {
@@ -77,7 +86,6 @@ func NewOrder(bondID, quantity uint, price float32, action Action) *Order {
 		Status:    PENDING,
 		ExpiresAt: time.Now().UTC().Add(10 * time.Hour),
 		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
 	}
 	order.ID = utils.GenerateID(order)
 

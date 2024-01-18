@@ -3,34 +3,37 @@ package models
 import (
 	"time"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/asalvi0/bond-trading/internal/utils"
+	"github.com/goccy/go-json"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID           string    `json:"id"`
-	Username     string    `json:"username" validate:"required,min=3,max=50"`
-	Email        string    `json:"email" validate:"required,email"`
-	PasswordHash string    `json:"password" validate:"required,min=8"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID        uint       `db:"id" json:"id"`
+	Email     string     `db:"email" json:"email" validate:"required,email,min=6,max=120"`
+	Password  string     `db:"password_hash" json:"password" validate:"required,min=6,max=120"`
+	Active    bool       `db:"active" json:"active"`
+	CreatedAt time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt *time.Time `db:"updated_at" json:"updatedAt"`
 }
 
-func NewUser(username, email, password string) (*User, error) {
-	pwdHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func (u *User) UnmarshalJSON(data []byte) error {
+	type Alias User
+	aux := (*Alias)(u)
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	salt := utils.HashString(u.Email)
+	pwdHash, err := bcrypt.GenerateFromPassword([]byte(u.Password+salt), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	user := User{
-		Username:     username,
-		Email:        email,
-		PasswordHash: string(pwdHash),
-		CreatedAt:    time.Now().UTC(),
-		UpdatedAt:    time.Now().UTC(),
-	}
-	user.ID = utils.GenerateID(user)
+	u.CreatedAt = time.Now().UTC()
+	u.Password = string(pwdHash)
+	u.Active = true
 
-	return &user, nil
+	return nil
 }
