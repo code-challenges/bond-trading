@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	. "github.com/asalvi0/bond-trading/internal/models"
@@ -9,13 +10,16 @@ import (
 
 func (db *Database) CreateOrder(ctx context.Context, order *Order) error {
 	sql := `INSERT INTO orders (id, user_id, bond_id, quantity, filled, price, action, status, expires_at, created_at)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
-	_, err := db.dbPool.Exec(ctx, sql,
+	tag, err := db.dbPool.Exec(ctx, sql,
 		order.ID, order.UserID, order.BondID, order.Quantity, order.Filled,
 		order.Price, order.Action, order.Status, order.ExpiresAt, order.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("Unable to insert record: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("No records were created")
 	}
 
 	return nil
@@ -26,17 +30,34 @@ func (db *Database) UpdateOrder(ctx context.Context, order *Order) error {
 				quantity = $4,
 				filled = $5,
 				price = $6,
-				action = $7,
-				status = $8,
-				expires_at = $9,
-				updated_at = $10
+				expires_at = $7,
+				updated_at = $8
 			WHERE id = $1 AND user_id = $2 AND bond_id = $3`
 
-	_, err := db.dbPool.Exec(ctx, sql,
+	tag, err := db.dbPool.Exec(ctx, sql,
 		order.ID, order.UserID, order.BondID, order.Quantity, order.Filled,
-		order.Price, order.Action, order.Status, order.ExpiresAt, order.UpdatedAt)
+		order.Price, order.ExpiresAt, order.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("Unable to update record: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("No records were updated")
+	}
+
+	return nil
+}
+
+func (db *Database) UpdateOrderStatus(ctx context.Context, order *Order) error {
+	sql := `UPDATE orders SET status = $4, updated_at = $5
+			WHERE id = $1 AND user_id = $2 AND bond_id = $3`
+
+	tag, err := db.dbPool.Exec(ctx, sql,
+		order.ID, order.UserID, order.BondID, order.Status, order.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("Unable to cancel order: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errors.New("No records were updated")
 	}
 
 	return nil
