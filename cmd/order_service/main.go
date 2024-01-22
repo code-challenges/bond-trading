@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"fmt"
 	"log"
 	"net/url"
@@ -9,17 +8,13 @@ import (
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 
-	"github.com/asalvi0/bond-trading/internal/database"
 	. "github.com/asalvi0/bond-trading/internal/database"
 	. "github.com/asalvi0/bond-trading/internal/models"
 	"github.com/asalvi0/bond-trading/internal/order_service"
 )
 
-//go:embed *.sql
-var fs embed.FS
-
 func init() {
-	dbURL, err := database.URL()
+	dbURL, err := GetDatabaseURL()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,7 +24,6 @@ func init() {
 		log.Fatal(err)
 	}
 	db := dbmate.New(u)
-	db.FS = fs
 	db.SchemaFile = "schema.sql"
 
 	driver, err := db.Driver()
@@ -44,40 +38,36 @@ func init() {
 
 	if !exists {
 		fmt.Println("Initializing Database...")
-		db.Create()
+
+		err = db.Create()
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		err = db.LoadSchema()
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		fmt.Println("Database Ready!")
 	}
 }
 
 func main() {
-	service, err := order_service.NewService()
+	svc, err := order_service.NewService()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := NewDatabase()
-	if err != nil {
-		log.Fatal(err)
+	svc.ListenForOrders()
+}
+
+func newOrders() []*Order {
+	return []*Order{
+		NewOrder(1, 10, 77, BUY),
+		NewOrder(2, 20, 91, BUY),
+		NewOrder(3, 30, 90, SELL),
+		NewOrder(4, 40, 91, SELL),
+		NewOrder(5, 50, 92, SELL),
 	}
-	defer db.Close()
-
-	orders := make([]*Order, 0)
-
-	orders = append(orders, NewOrder(1, 10, 77, BUY))
-	orders = append(orders, NewOrder(2, 20, 91, BUY))
-	orders = append(orders, NewOrder(3, 30, 90, SELL))
-	orders = append(orders, NewOrder(4, 40, 91, SELL))
-	orders = append(orders, NewOrder(5, 50, 92, SELL))
-
-	for _, order := range orders {
-		err = service.ProcessOrder(order)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	fmt.Println(service.PrintOrderBook())
 }

@@ -19,7 +19,7 @@ func NewDatabase() (*Database, error) {
 
 	ctx := context.Background()
 
-	dbURL, err := URL()
+	dbURL, err := GetDatabaseURL()
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func NewDatabase() (*Database, error) {
 	return &database, nil
 }
 
-func URL() (string, error) {
+func GetDatabaseURL() (string, error) {
 	host := config.Config("DB_HOST")
 	port := config.Config("DB_PORT")
 	dbName := config.Config("DB_NAME")

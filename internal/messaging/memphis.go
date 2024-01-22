@@ -2,16 +2,12 @@ package messaging
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/memphisdev/memphis.go"
 
 	"github.com/asalvi0/bond-trading/internal/config"
-	. "github.com/asalvi0/bond-trading/internal/models"
 )
 
 type MemphisClient struct {
@@ -51,8 +47,8 @@ func (m *MemphisClient) setupMemphis() (err error) {
 	}
 
 	m.setupStations()
-	m.setupProducers()
-	m.setupConsumers()
+	// m.setupProducers()
+	// m.setupConsumers()
 
 	return nil
 }
@@ -85,7 +81,7 @@ func (m *MemphisClient) setupStations() error {
 }
 
 // Create the buy, sell and cancel producers
-func (m *MemphisClient) setupProducers() error {
+func (m *MemphisClient) SetupProducers() error {
 	serviceName := config.Config("MEMPHIS_PRODUCER_SERVICE_NAME")
 
 	buyStationName := config.Config("MEMPHIS_BUY_STATION_NAME")
@@ -114,7 +110,7 @@ func (m *MemphisClient) setupProducers() error {
 }
 
 // Create the buy, sell and cancel consumers
-func (m *MemphisClient) setupConsumers() error {
+func (m *MemphisClient) SetupConsumers(callback memphis.ConsumeHandler) error {
 	serviceName := config.Config("MEMPHIS_CONSUMER_SERVICE_NAME")
 
 	buyStationName := config.Config("MEMPHIS_BUY_STATION_NAME")
@@ -128,19 +124,19 @@ func (m *MemphisClient) setupConsumers() error {
 	ctx := context.Background()
 
 	// BUY
-	err := m.createConsumer(ctx, buyStationName, serviceName, buyConsumerGroupName)
+	err := m.createConsumer(ctx, buyStationName, serviceName, buyConsumerGroupName, callback)
 	if err != nil {
 		return fmt.Errorf("Failed to create consumer: %w", err)
 	}
 
 	// SELL
-	err = m.createConsumer(ctx, sellStationName, serviceName, sellConsumerGroupName)
+	err = m.createConsumer(ctx, sellStationName, serviceName, sellConsumerGroupName, callback)
 	if err != nil {
 		return fmt.Errorf("Failed to create consumer: %w", err)
 	}
 
 	// CANCEL
-	err = m.createConsumer(ctx, cancelStationName, serviceName, cancelConsumerGroupName)
+	err = m.createConsumer(ctx, cancelStationName, serviceName, cancelConsumerGroupName, callback)
 	if err != nil {
 		return fmt.Errorf("Failed to create consumer: %w", err)
 	}
@@ -171,83 +167,4 @@ func (m *MemphisClient) createStation(name string) error {
 	m.stations[name] = station
 
 	return nil
-}
-
-// Create a producer for the station(topic)
-func (m *MemphisClient) createProducer(serviceName, stationName string) error {
-	producer, err := m.conn.CreateProducer(stationName, serviceName)
-	if err != nil {
-		return fmt.Errorf("Failed to create producer: %w", err)
-	}
-	m.producers[stationName] = producer
-
-	return nil
-}
-
-// Create a consumer for the station(topic)
-func (m *MemphisClient) createConsumer(ctx context.Context, stationName, serviceName, consumerGroupName string) error {
-	consumer, err := m.conn.CreateConsumer(stationName, serviceName, memphis.ConsumerGroup(consumerGroupName))
-	if err != nil {
-		return fmt.Errorf("Failed to create consumer: %w", err)
-	}
-
-	consumer.SetContext(ctx)
-	err = consumer.Consume(m.ConsumeMessages)
-	if err != nil {
-		return err
-	}
-	m.consumers[stationName] = consumer
-
-	return nil
-}
-
-// Send a message to the memphis station(topic) depending on the action provided
-func (m *MemphisClient) ProduceMessage(order *Order) error {
-	var station string
-	switch order.Action {
-	case BUY:
-		station = config.Config("MEMPHIS_BUY_STATION_NAME")
-	case SELL:
-		station = config.Config("MEMPHIS_SELL_STATION_NAME")
-	case CANCEL:
-		station = config.Config("MEMPHIS_CANCEL_STATION_NAME")
-	default:
-		return errors.New("Invalid action provided")
-	}
-
-	producer, ok := m.producers[station]
-	if producer == nil || !ok {
-		return errors.New("Producer not found")
-	}
-
-	opts := []memphis.ProduceOpt{
-		memphis.AsyncProduce(),
-		memphis.AckWaitSec(15),
-		memphis.MsgId(order.ID),
-	}
-
-	jsonData, err := json.Marshal(order)
-	if err != nil {
-		return err
-	}
-
-	err = producer.Produce(jsonData, opts...)
-	if err != nil {
-		return fmt.Errorf("Produce failed: %w", err)
-	}
-
-	return nil
-}
-
-// Process a batch of messages from a memphis station(topic)
-func (m *MemphisClient) ConsumeMessages(msgs []*memphis.Msg, err error, ctx context.Context) {
-	if err != nil {
-		log.Printf("Fetch failed: %v", err)
-		return
-	}
-
-	for i := 0; i < len(msgs); i++ {
-		log.Println(string(msgs[i].Data()))
-		msgs[i].Ack()
-	}
 }

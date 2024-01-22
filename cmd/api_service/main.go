@@ -21,7 +21,6 @@ import (
 
 	"github.com/asalvi0/bond-trading/internal/api/auth"
 	"github.com/asalvi0/bond-trading/internal/api/order"
-	"github.com/asalvi0/bond-trading/internal/api/storage/sqlite3"
 	"github.com/asalvi0/bond-trading/internal/config"
 )
 
@@ -49,7 +48,7 @@ func main() {
 }
 
 func setupMiddleware(app *fiber.App) {
-	storage := sqlite3.New()
+	// storage := sqlite3.New()
 
 	app.Use(favicon.New())
 	app.Use(recover.New())
@@ -70,7 +69,7 @@ func setupMiddleware(app *fiber.App) {
 	}))
 
 	app.Use(limiter.New(limiter.Config{
-		Storage:    storage,
+		// Storage:    storage,
 		Max:        1000,
 		Expiration: 1 * time.Minute,
 	}))

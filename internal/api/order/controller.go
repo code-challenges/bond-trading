@@ -22,6 +22,7 @@ func newController() (*Controller, error) {
 	if err != nil {
 		return nil, err
 	}
+	memphisClient.SetupProducers()
 
 	db, err := NewDatabase()
 	if err != nil {
