@@ -10,7 +10,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/i25959341/orderbook v0.2.5
-	github.com/jackc/pgx/v5 v5.5.2
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/joho/godotenv v1.5.1
 	github.com/memphisdev/memphis.go v1.3.2
 	github.com/shopspring/decimal v1.3.1
